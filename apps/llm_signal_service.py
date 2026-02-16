@@ -36,7 +36,10 @@ class LLMProvider:
         if settings.openai_api_key:
             from openai import AsyncOpenAI
 
-            self._client = AsyncOpenAI(api_key=settings.openai_api_key)
+            kwargs = {"api_key": settings.openai_api_key}
+            if settings.openai_base_url:
+                kwargs["base_url"] = settings.openai_base_url
+            self._client = AsyncOpenAI(**kwargs)
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=0.5, min=0.5, max=4))
     async def infer(self, title: str, content: str, symbol: str) -> dict:
@@ -49,16 +52,39 @@ class LLMProvider:
             f"\nSymbol: {symbol}\nTitle: {title}\nContent: {content[:1500]}"
         )
         try:
-            response = await self._client.responses.create(
+            response = await self._client.chat.completions.create(
                 model=self.settings.openai_model,
-                input=prompt,
+                messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
             )
-            text = response.output_text.strip()
-            return json.loads(text)
+            text = (response.choices[0].message.content or "").strip()
+            parsed = self._parse_json_text(text)
+            if parsed is None:
+                raise ValueError("model output is not valid json")
+            return parsed
         except Exception:
             logger.exception("openai inference failed, fallback heuristic")
             return self._heuristic(title, content)
+
+    def _parse_json_text(self, text: str) -> dict | None:
+        if not text:
+            return None
+
+        # First try strict JSON parse.
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            pass
+
+        # Then try extracting from fenced code blocks or mixed content.
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            return None
+        try:
+            return json.loads(text[start : end + 1])
+        except json.JSONDecodeError:
+            return None
 
     def _heuristic(self, title: str, content: str) -> dict:
         text = f"{title} {content}".lower()

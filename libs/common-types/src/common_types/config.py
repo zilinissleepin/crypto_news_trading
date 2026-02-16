@@ -20,7 +20,8 @@ try:
         bus_backend: str = "redis"
 
         openai_api_key: str = ""
-        openai_model: str = "gpt-4o-mini"
+        openai_model: str = "qwen-plus"
+        openai_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
         telegram_bot_token: str = ""
         telegram_chat_id: str = ""
@@ -68,7 +69,10 @@ except ModuleNotFoundError:
         bus_backend: str = Field(default_factory=lambda: os.getenv("BUS_BACKEND", "redis"))
 
         openai_api_key: str = Field(default_factory=lambda: os.getenv("OPENAI_API_KEY", ""))
-        openai_model: str = Field(default_factory=lambda: os.getenv("OPENAI_MODEL", "gpt-4o-mini"))
+        openai_model: str = Field(default_factory=lambda: os.getenv("OPENAI_MODEL", "qwen-plus"))
+        openai_base_url: str = Field(
+            default_factory=lambda: os.getenv("OPENAI_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+        )
 
         telegram_bot_token: str = Field(default_factory=lambda: os.getenv("TELEGRAM_BOT_TOKEN", ""))
         telegram_chat_id: str = Field(default_factory=lambda: os.getenv("TELEGRAM_CHAT_ID", ""))
