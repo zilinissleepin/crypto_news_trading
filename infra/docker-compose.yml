@@ -1,0 +1,165 @@
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: crypto_trading
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+
+  ingest-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/ingest-service/main.py"]
+    depends_on:
+      - redis
+
+  entity-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/entity-service/main.py"]
+    depends_on:
+      - redis
+
+  llm-signal-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/llm-signal-service/main.py"]
+    depends_on:
+      - redis
+
+  signal-fusion-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/signal-fusion-service/main.py"]
+    depends_on:
+      - redis
+
+  universe-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/universe-service/main.py"]
+    depends_on:
+      - redis
+
+  portfolio-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/portfolio-service/main.py"]
+    depends_on:
+      - redis
+
+  risk-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/risk-service/main.py"]
+    depends_on:
+      - redis
+
+  execution-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/execution-service/main.py"]
+    depends_on:
+      - redis
+
+  position-pnl-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/position-pnl-service/main.py"]
+    depends_on:
+      - redis
+
+  position-sync-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/position-sync-service/main.py"]
+    depends_on:
+      - redis
+
+  persistence-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/persistence-service/main.py"]
+    depends_on:
+      - redis
+      - postgres
+
+  monitoring-alert-service:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/monitoring-alert-service/main.py"]
+    depends_on:
+      - redis
+
+  orchestrator-api:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ..:/app
+    env_file:
+      - ../.env
+    command: ["sh", "-c", "pip install -q -e . && PYTHONPATH=libs/common-types/src:libs/exchange-adapters/src:libs/feature-store/src:. python services/orchestrator-api/app.py"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis

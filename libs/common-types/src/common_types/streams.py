@@ -1,0 +1,12 @@
+class Streams:
+    NEWS_RAW = "news.raw"
+    NEWS_ENTITY = "news.entity"
+    SIGNAL_RAW = "signal.raw"
+    SIGNAL_TRADEABLE = "signal.tradeable"
+    SIGNAL_UNIVERSE = "signal.universe"
+    ORDER_INTENT = "order.intent"
+    ORDER_APPROVED = "order.approved"
+    ORDER_REJECTED = "order.rejected"
+    EXECUTION_REPORT = "execution.report"
+    PNL_SNAPSHOT = "pnl.snapshot"
+    RISK_ALERT = "risk.alert"
