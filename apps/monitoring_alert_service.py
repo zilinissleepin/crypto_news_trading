@@ -4,7 +4,7 @@ import logging
 
 import httpx
 
-from common_types import AppSettings
+from common_types import AppSettings, NewsEvent
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,17 @@ class MonitoringAlertService:
     def __init__(self, notifier: TelegramNotifier):
         self.notifier = notifier
 
+    async def handle_news(self, payload: dict) -> list[tuple[str, dict]]:
+        event = NewsEvent.model_validate(payload)
+        title = _limit_text(event.title, 180)
+        message = (
+            f"[NEWS] source={event.source} lang={event.lang}\n"
+            f"title={title}\n"
+            f"url={event.url}"
+        )
+        await self.notifier.send(message)
+        return []
+
     async def handle_rejected(self, payload: dict) -> list[tuple[str, dict]]:
         message = (
             f"[REJECTED] intent={payload.get('intent_id')} reason={payload.get('reason_code')} "
@@ -51,3 +62,10 @@ class MonitoringAlertService:
     async def handle_risk_alert(self, payload: dict) -> list[tuple[str, dict]]:
         await self.notifier.send(f"[RISK] {payload.get('message')}")
         return []
+
+
+def _limit_text(text: str, max_len: int) -> str:
+    clean = " ".join(text.split())
+    if len(clean) <= max_len:
+        return clean
+    return f"{clean[: max_len - 3]}..."

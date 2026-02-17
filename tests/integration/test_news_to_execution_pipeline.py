@@ -19,6 +19,7 @@ def test_news_raw_to_execution_report_end_to_end():
         bus_backend="memory",
         universe_symbols="BTCUSDT,ETHUSDT",
         min_signal_confidence=0.6,
+        openai_api_key="",
     )
 
     entity = EntityService(settings)

@@ -34,13 +34,41 @@ class IngestService:
 
     async def _fetch_feed(self, name: str, url: str) -> list[NewsEvent]:
         out: list[NewsEvent] = []
-        try:
-            async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
-                resp = await client.get(url)
-                resp.raise_for_status()
-                parsed = feedparser.parse(resp.text)
-        except Exception:
-            logger.exception("failed to fetch feed=%s url=%s", name, url)
+        parsed = None
+        delay_sec = 1.0
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            try:
+                async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+                    resp = await client.get(url)
+                    resp.raise_for_status()
+                    parsed = feedparser.parse(resp.text)
+                break
+            except httpx.RequestError as exc:
+                if attempt == max_attempts:
+                    logger.error(
+                        "failed to fetch feed=%s url=%s attempts=%s error=%s",
+                        name,
+                        url,
+                        max_attempts,
+                        repr(exc),
+                    )
+                    return out
+                logger.warning(
+                    "fetch feed retry feed=%s attempt=%s/%s url=%s error=%s",
+                    name,
+                    attempt,
+                    max_attempts,
+                    url,
+                    repr(exc),
+                )
+                await asyncio.sleep(delay_sec)
+                delay_sec *= 2
+            except Exception:
+                logger.exception("failed to parse feed=%s url=%s", name, url)
+                return out
+
+        if parsed is None:
             return out
 
         for entry in parsed.entries:

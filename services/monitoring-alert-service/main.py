@@ -19,12 +19,22 @@ async def _main() -> None:
     try:
         await asyncio.gather(
             run_stream_worker(
+                service_name="monitoring-alert-news",
+                bus=bus,
+                input_stream=Streams.NEWS_RAW,
+                handler=service.handle_news,
+                poll_ms=settings.service_poll_ms,
+                idle_sleep_sec=settings.service_idle_sleep_sec,
+                start_id="$",
+            ),
+            run_stream_worker(
                 service_name="monitoring-alert-rejected",
                 bus=bus,
                 input_stream=Streams.ORDER_REJECTED,
                 handler=service.handle_rejected,
                 poll_ms=settings.service_poll_ms,
                 idle_sleep_sec=settings.service_idle_sleep_sec,
+                start_id="$",
             ),
             run_stream_worker(
                 service_name="monitoring-alert-exec",
@@ -33,6 +43,7 @@ async def _main() -> None:
                 handler=service.handle_execution,
                 poll_ms=settings.service_poll_ms,
                 idle_sleep_sec=settings.service_idle_sleep_sec,
+                start_id="$",
             ),
             run_stream_worker(
                 service_name="monitoring-alert-risk",
@@ -41,6 +52,7 @@ async def _main() -> None:
                 handler=service.handle_risk_alert,
                 poll_ms=settings.service_poll_ms,
                 idle_sleep_sec=settings.service_idle_sleep_sec,
+                start_id="$",
             ),
         )
     finally:

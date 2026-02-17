@@ -126,9 +126,9 @@ start_service() {
   fi
 
   (
-    cd "${ROOT_DIR}" && \
+    cd "${ROOT_DIR}"
     REDIS_URL="${redis_url}" PYTHONPATH="${PYTHONPATH_VALUE}" \
-    nohup "${VENV_PY}" "${main_py}" >"${log_file}" 2>&1 &
+      nohup "${VENV_PY}" "${main_py}" >"${log_file}" 2>&1 &
     echo $! >"${pid_file}"
   )
 
